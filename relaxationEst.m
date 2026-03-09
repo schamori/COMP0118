@@ -35,7 +35,6 @@ while (t<AL_iter) && ((abs (res_p) > tol1) || (abs (res_d) > tol2))
     
     %% Solve for g
      % %%%%%% INSERT YOUR CODE HERE % %%%%%% 
-     % test
     
     %% Solve for f
     % %%%%%% INSERT YOUR CODE HERE % %%%%%%
