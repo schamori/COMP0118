@@ -34,7 +34,7 @@ while (t<AL_iter) && ((abs (res_p) > tol1) || (abs (res_d) > tol2))
     f02 = f;
     
     %% Solve for g
-    g = 10;
+     % %%%%%% INSERT YOUR CODE HERE % %%%%%%
     
     %% Solve for f
     % %%%%%% INSERT YOUR CODE HERE % %%%%%%
