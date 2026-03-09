@@ -24,8 +24,8 @@ d2 = zeros(size(f));
 puxg = 0.*reshape(g, Nrow, Ncol);
 puyg = 0.*reshape(g, Nrow, Ncol);
 
-puxr = 0.*reshape(g, Nrow, Ncol);
-puyr = 0.*reshape(g, Nrow, Ncol);
+puxr = 0.*reshape(r, Nrow, Ncol);
+puyr = 0.*reshape(r, Nrow, Ncol);
 
 disp(' ------- Running T2* Relaxation Estimation ------- ')
 
@@ -34,19 +34,24 @@ while (t<AL_iter) && ((abs (res_p) > tol1) || (abs (res_d) > tol2))
     f02 = f;
     
     %% Solve for g
-    % %%%%%% INSERT YOUR CODE HERE % %%%%%%
+    tmp = reshape(a - d1, Nrow, Ncol);
+    [g_img, puxg, puyg] = chambolle_prox_TV_stop(tmp, lambdaA/mu, puxg, puyg);
+    g = g_img(:);
     
     %% Solve for f
-    % %%%%%% INSERT YOUR CODE HERE % %%%%%%
+    tmp = reshape(r - d2, Nrow, Ncol);
+    [f_img, puxr, puyr] = chambolle_prox_TV_stop(tmp, lambdaR/mu, puxr, puyr);
+    f = f_img(:);
+    f_d2 = f + d2;
 
-    
     for oo = 1:Npix
-            %% Solve for a
-            % %%%%%% INSERT YOUR CODE HERE % %%%%%%
+        
+        %% Solve for a       
+        E = exp(-r(oo)*TE(:));
+        a(oo) = (E' * y(:,oo) + mu*(g(oo) - d1(oo))) / (E' * E + mu);
 
         %% Solve for r
-            % %%%%%% INSERT YOUR CODE IN THE gradientDescentAK FUNCTION % %%%%%%
-            [r(oo), niter, rnorm, dx] = gradientDescentAK(r(oo), TE, a(oo), y(:, oo), mu, f_d2(oo));
+        [r(oo), niter, rnorm, dx] = gradientDescentAK(r(oo), TE, a(oo), y(:, oo), mu, f_d2(oo));
     end
    
     %% Update Lagrange multipliers
