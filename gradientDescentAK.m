@@ -24,5 +24,12 @@ niter = niter - 1;
 end
 
 function gradientR = grad(TE, r, a, y, mu, f_d2)
-% %%%%%% INSERT YOUR CODE HERE % %%%%%%
+
+E = exp(-r .* TE);              % exp(-r t)
+residual = y - a .* E;          % (s - a exp(-rt))
+sensitivity = TE .* E;          % t ⊙ exp(-rt)
+data_grad = a * (sensitivity' * residual);   % a (t⊙exp(-rt))^T (s - a exp(-rt))
+penalty_grad = mu * (r - f_d2); % μ(r - f - d2)
+gradientR = data_grad + penalty_grad;
+
 end
