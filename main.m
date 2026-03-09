@@ -23,76 +23,86 @@ yReshaped = reshape(Y, Nrow_*Ncol_, bands)';
 %% Run T2* estimation algorithm
 lambdaA = 1e-5;
 lambdaR = 1e-5;
-[a, r] = relaxationEst(yReshaped, TE, Nrow_, Ncol_, lambdaA, lambdaR);
+[a, r, g, f] = relaxationEst(yReshaped, TE, Nrow_, Ncol_, lambdaA, lambdaR);
 
 %% Plot stuff - MODIFY AS REQUIRED
+
+%% -------- Figure 1 --------
 figure(1)
-subplot(2, 4, 1);
+set(gcf,'Units','normalized','Position',[0.05 0.3 0.9 0.4])
+
+tiledlayout(1,4,'TileSpacing','compact','Padding','compact')
+
 % Ground truth s0
-S0_Image = [s0(1)*ones(Nrow, Ncol), s0(2)*ones(Nrow, Ncol); s0(3)*ones(Nrow, Ncol), s0(4)*ones(Nrow, Ncol)];
+nexttile
+S0_Image = [s0(1)*ones(Nrow, Ncol), s0(2)*ones(Nrow, Ncol); ...
+            s0(3)*ones(Nrow, Ncol), s0(4)*ones(Nrow, Ncol)];
+
 imagesc(S0_Image)
-axis image
-axis off
-caxis([min(min(Y(:, :,1))) max([max(a(:)) s0(uu)])])
-c = colorbar;
-set(c, 'FontSize', 26)
-title('a_0')
+axis image off
+caxis([min(Y(:,:,1),[],'all') max([a(:); s0(:)])])
+colorbar
+title('a_0','FontSize',14)
 
-subplot(2, 4, 2);
-imagesc(Y(:, :, 1))
-axis image
-axis off
-caxis([min(min(Y(:, :,1))) max([max(a(:)) s0(uu)])])
-c = colorbar;
-set(c, 'FontSize', 26)
-title('a_1')
+% Observed signal
+nexttile
+imagesc(Y(:,:,1))
+axis image off
+caxis([min(Y(:,:,1),[],'all') max([a(:); s0(:)])])
+colorbar
+title('a_1','FontSize',14)
 
-subplot(2, 4, 3)
-imagesc(reshape(a(:, :, 1), Nrow_, Ncol_))
-axis image
-axis off
-caxis([min(min(Y(:, :,1))) max([max(a(:)) s0(uu)])])
-c = colorbar;
-set(c, 'FontSize', 26)
-title('Estimated a_0')
+% Estimated a
+nexttile
+imagesc(reshape(a(:,:,1),Nrow_,Ncol_))
+axis image off
+caxis([min(Y(:,:,1),[],'all') max([a(:); s0(:)])])
+colorbar
+title('Estimated a_0','FontSize',14)
 
-a_reshaped = reshape(a, Nrow_, Ncol_);
-a_mean = [mean(mean(a_reshaped(1:32, 1:32)))*ones(Nrow, Ncol), mean(mean(a_reshaped(1:32, 33:end)))*ones(Nrow, Ncol); mean(mean(a_reshaped(33:end, 1:32)))*ones(Nrow, Ncol), mean(mean(a_reshaped(33:end, 33:end)))*ones(Nrow, Ncol)];
+% Mean estimated a
+a_reshaped = reshape(a,Nrow_,Ncol_);
 
-subplot(2, 4, 4)
+a_mean = [mean(a_reshaped(1:32,1:32),'all')*ones(Nrow,Ncol), ...
+          mean(a_reshaped(1:32,33:end),'all')*ones(Nrow,Ncol); ...
+          mean(a_reshaped(33:end,1:32),'all')*ones(Nrow,Ncol), ...
+          mean(a_reshaped(33:end,33:end),'all')*ones(Nrow,Ncol)];
+
+nexttile
 imagesc(a_mean)
-axis image
-axis off
-caxis([min(min(Y(:, :,1))) max([max(a_mean(:)) s0(uu)])])
-c = colorbar;
-set(c, 'FontSize', 26)
-title('Mean of Estimated a_0')
+axis image off
+caxis([min(Y(:,:,1),[],'all') max([a_mean(:); s0(:)])])
+colorbar
+title('Mean of Estimated a_0','FontSize',14)
 
 
+%% -------- Figure 2 --------
 figure(2)
-subplot(2, 4, 1)
-imagesc(reshape(1./r(:, :, 1), Nrow_, Ncol_))
-axis image
-axis off
-caxis([0 max([max(1./r), max(T2)])])
-c = colorbar;
-set(c, 'FontSize', 26)
+set(gcf,'Units','normalized','Position',[0.05 0.05 0.9 0.4])
+
+tiledlayout(1,2,'TileSpacing','compact','Padding','compact')
+
+% Estimated T2*
+nexttile
+imagesc(reshape(1./r(:,:,1),Nrow_,Ncol_))
+axis image off
+caxis([0 max([1./r(:); T2(:)])])
+colorbar
 colormap hsv
-c.TickLabels = [0, 5, 10, 15, 20];
-title('Estimated T2*')
+title('Estimated T2*','FontSize',14)
 
-r_reshaped = reshape(1./r, Nrow_, Ncol_);
-r_mean = [mean(mean(r_reshaped(1:32, 1:32)))*ones(Nrow, Ncol), mean(mean(r_reshaped(1:32, 33:end)))*ones(Nrow, Ncol); mean(mean(r_reshaped(33:end, 1:32)))*ones(Nrow, Ncol), mean(mean(r_reshaped(33:end, 33:end)))*ones(Nrow, Ncol)];
+% Mean estimated T2*
+r_reshaped = reshape(1./r,Nrow_,Ncol_);
 
-subplot(2, 4, 2)
+r_mean = [mean(r_reshaped(1:32,1:32),'all')*ones(Nrow,Ncol), ...
+          mean(r_reshaped(1:32,33:end),'all')*ones(Nrow,Ncol); ...
+          mean(r_reshaped(33:end,1:32),'all')*ones(Nrow,Ncol), ...
+          mean(r_reshaped(33:end,33:end),'all')*ones(Nrow,Ncol)];
+
+nexttile
 imagesc(r_mean)
-axis image
-axis off
-caxis([0 max([max(r_mean(:)), max(T2)])])
-c = colorbar;
-set(c, 'FontSize', 26)
+axis image off
+caxis([0 max([r_mean(:); T2(:)])])
+colorbar
 colormap hsv
-c.TickLabels = [0, 5, 10, 15, 20];
-title('Mean Estimated T2*')
-
-
+title('Mean Estimated T2*','FontSize',14)
