@@ -14,6 +14,7 @@ while and(gnorm >= tol, and(niter <= maxiter, dr >= drmin))
     gradientR = grad(TE, r, a, y, mu, f_d2);
     gnorm = norm(gradientR);
     rnew = r - alpha * gradientR;
+    rnew = max(rnew, 1e-6);     % enforce positivity: r = 1/T2* must be > 0
     niter = niter + 1;
     dr = norm(rnew - r);
     r = rnew;
