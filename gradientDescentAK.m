@@ -1,6 +1,6 @@
 function [ropt, niter, gnorm, dr] = gradientDescentAK(r0, TE, a, y, mu, f_d2)
 
-maxiter = 1000;         % Maximum number of allowed iterations
+maxiter = 50;         % Maximum number of allowed iterations
 drmin = 1e-6;           % Minimum allowed perturbation
 alpha = 1e-8;           % Step size (can be sensitive for different T2*)
 tol = 1e-6;             % Termination tolerance

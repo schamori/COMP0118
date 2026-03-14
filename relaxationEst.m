@@ -1,6 +1,6 @@
 function [a, r, g, f] = relaxationEst(y, TE, Nrow, Ncol, lambdaA, lambdaR)
 
-AL_iter = 5e3;
+AL_iter = 50;
 mu = 1e-1;
 
 Npix = size(y, 2);
@@ -90,3 +90,5 @@ end
 disp(' ------- T2* Relaxation Estimation Completed ------- ')
 
 end
+
+%
