@@ -1,0 +1,113 @@
+clc; clear all; close all;
+
+patient_folder = 'Data/1_2';
+
+files = dir(fullfile(patient_folder, '*.IMA'));
+nFiles = length(files);
+fprintf('Found %d files\n', nFiles);
+
+% Read DICOM files manually
+img_stack = [];
+TE_values = zeros(nFiles, 1);
+
+for k = 1:nFiles
+    filepath = fullfile(patient_folder, files(k).name);
+    [img, metadata] = readDICOM(filepath);
+    
+    if k == 1
+        [Nrow, Ncol] = size(img);
+        img_stack = zeros(Nrow, Ncol, nFiles);
+    end
+    img_stack(:,:,k) = img;
+    
+    if isfield(metadata, 'TE')
+        TE_values(k) = metadata.TE;
+    else
+        TE_values(k) = k;
+    end
+end
+
+[TE_sorted, sort_idx] = sort(TE_values);
+img_stack = img_stack(:,:,sort_idx);
+
+% Report
+fprintf('Image size: [%d x %d x %d]\n', Nrow, Ncol, nFiles);
+fprintf('TE values: '); disp(TE_sorted');
+
+% Plot
+nCols_plot = min(nFiles, 4);
+nRows_plot = ceil(nFiles / nCols_plot);
+figure('Units','normalized','Position',[0.02 0.05 0.96 0.85]);
+for k = 1:nFiles
+    subplot(nRows_plot, nCols_plot, k);
+    imagesc(img_stack(:,:,k));
+    axis image off; colormap gray;
+    title(sprintf('TE = %.2f', TE_sorted(k)), 'FontSize', 9);
+end
+sgtitle('Patient 1\_2 - MRI Echo Sequence', 'FontSize', 14);
+
+
+% Manual DICOM reader
+function [img, metadata] = readDICOM(filepath)
+    fid = fopen(filepath, 'r', 'l');  
+    metadata = struct();
+    img = [];
+    
+    fseek(fid, 132, 'bof');
+    
+    rows = 0; cols = 0; bits = 16;
+    pixel_offset = 0;
+    
+    while ~feof(fid)
+        group   = fread(fid, 1, 'uint16');
+        element = fread(fid, 1, 'uint16');
+        
+        if isempty(group), break; end
+        
+        vr = fread(fid, 2, '*char')';
+        
+        if any(strcmp(vr, {'OB','OW','SQ','UN','UC','UR','UT'}))
+            fread(fid, 2, 'uint8');  
+            len = fread(fid, 1, 'uint32');
+        elseif any(strcmp(vr, {'AE','AS','AT','CS','DA','DS','DT','FL','FD',...
+                               'IS','LO','LT','PN','SH','SL','SS','ST','TM',...
+                               'UI','UL','US'}))
+            len = fread(fid, 1, 'uint16');
+        else
+
+            fseek(fid, -2, 'cof');
+            len = fread(fid, 1, 'uint32');
+        end
+        
+        if isempty(len) || len < 0, break; end
+        
+      
+        if group == hex2dec('0028') && element == hex2dec('0010')
+            rows = fread(fid, 1, 'uint16');
+        elseif group == hex2dec('0028') && element == hex2dec('0011')
+            cols = fread(fid, 1, 'uint16');
+        elseif group == hex2dec('0028') && element == hex2dec('0100')
+            bits = fread(fid, 1, 'uint16');
+        elseif group == hex2dec('0018') && element == hex2dec('0081')
+            raw = fread(fid, len, '*char')';
+            metadata.TE = str2double(raw);
+        elseif group == hex2dec('7FE0') && element == hex2dec('0010')
+            pixel_offset = ftell(fid);
+            break;
+        else
+            fseek(fid, len, 'cof');
+        end
+    end
+    
+    % Read pixel data
+    if pixel_offset > 0 && rows > 0 && cols > 0
+        fseek(fid, pixel_offset, 'bof');
+        if bits == 16
+            img = fread(fid, rows*cols, 'uint16');
+        else
+            img = fread(fid, rows*cols, 'uint8');
+        end
+        img = double(reshape(img, cols, rows)');
+    end
+    fclose(fid);
+end
